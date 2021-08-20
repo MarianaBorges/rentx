@@ -61,7 +61,7 @@ export function CarDetails(){
         <BackButton onPress={handleGoBack} />
       </Header>
       <CarImages>
-        <ImageSlider 
+        <ImageSlider
           imagesUrl={car.photos}
         />
       </CarImages>
@@ -81,9 +81,9 @@ export function CarDetails(){
         <Accessories>
           {
             car.accessories.map(accessory => (
-              <Accessory 
+              <Accessory
                 key={accessory.type}
-                name={accessory.name} 
+                name={accessory.name}
                 icon={getAccessoryIcon(accessory.type)}
               />
             ))
@@ -100,5 +100,3 @@ export function CarDetails(){
   </Container>
  );
 }
-
-

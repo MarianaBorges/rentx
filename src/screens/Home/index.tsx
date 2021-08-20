@@ -2,6 +2,8 @@ import React,{ useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from 'styled-components/native';
 
 import { RFValue } from 'react-native-responsive-fontsize';
 
@@ -12,7 +14,8 @@ import {
     Header,
     HeaderContent,
     TotalCars,
-    CarList
+    CarList,
+    MyCarButton
 } from './styles';
 
 import { Car } from '../../components/Car';
@@ -25,7 +28,7 @@ type RootStackParamList = {
     Home: undefined;
     CarDetails: undefined;
   };
-  
+
 type HomeScreenNavigationProp = StackNavigationProp<
    RootStackParamList,
    'Home'
@@ -37,10 +40,15 @@ export function Home(){
     const [cars, setCars] = useState<CarDTO[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const theme = useTheme();
+
     function handleCardDetailsCar(car: CarDTO){
         navigation.navigate('CarDetails', { car });
     }
 
+    function handleMyCars(){
+        navigation.navigate('MyCars');
+    }
     useEffect(()=>{
         async function fetchCars(){
             try{
@@ -55,7 +63,7 @@ export function Home(){
         }
         fetchCars();
     },[]);
- 
+
     return (
         <Container>
             <StatusBar
@@ -72,12 +80,20 @@ export function Home(){
                 </HeaderContent>
             </Header>
             { loading ? <Load /> :
-            <CarList 
+            <CarList
                 data={cars}
                 keyExtractor={item => item.id}
                 renderItem={({item})=>  <Car data={item} onPress={()=>handleCardDetailsCar(item)}/>}
             />
             }
+
+            <MyCarButton onPress={handleMyCars}>
+              <Ionicons
+                name='ios-car-sport'
+                size={32}
+                color={theme.colors.main_light}
+              />
+            </MyCarButton>
         </Container>
     );
 }
