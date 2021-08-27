@@ -1,9 +1,18 @@
 import React,{ useEffect, useState } from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, StyleSheet, BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from 'styled-components/native';
+import { RectButton, PanGestureHandler } from 'react-native-gesture-handler';
+import Animated,{
+    useSharedValue, 
+    useAnimatedStyle,
+    useAnimatedGestureHandler,
+    withSpring
+} from 'react-native-reanimated';
+
+const ButtonAnimated = Animated.createAnimatedComponent(RectButton);
 
 import { RFValue } from 'react-native-responsive-fontsize';
 
@@ -19,10 +28,11 @@ import {
 } from './styles';
 
 import { Car } from '../../components/Car';
-import { Load } from '../../components/Load';
+import { LoadAnimated } from '../../components/LoadAnimated';
 import api from '../../services/api';
 
 import { CarDTO } from '../../dtos/CarDTO';
+
 
 type RootStackParamList = {
     Home: undefined;
@@ -40,6 +50,33 @@ export function Home(){
     const [cars, setCars] = useState<CarDTO[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const positionY = useSharedValue(0);
+    const positionX = useSharedValue(0);
+
+    const myCarsButtonStyle = useAnimatedStyle(() => {
+        return {
+            transform:[
+                { translateX: positionX.value},
+                { translateY: positionY.value}
+            ]
+        }
+      });
+
+    const onGestureEvent = useAnimatedGestureHandler({
+        onStart(_, ctx: any){
+            ctx.positionX = positionX.value;
+            ctx.positionY = positionY.value;
+        },
+        onActive(event, ctx: any){
+            positionX.value = ctx.positionX + event.translationX;
+            positionY.value = ctx.positionY + event.translationY;
+        },
+        onEnd(){
+            positionX.value = withSpring(0);
+            positionY.value = withSpring(0);
+        }
+    });
+
     const theme = useTheme();
 
     function handleCardDetailsCar(car: CarDTO){
@@ -54,7 +91,6 @@ export function Home(){
             try{
                 const response = await api.get('/cars');
                 setCars(response.data);
-                console.log(response.data)
             }catch(error){
                 console.error(error);
             }finally{
@@ -63,6 +99,12 @@ export function Home(){
         }
         fetchCars();
     },[]);
+
+    useEffect(()=>{
+        BackHandler.addEventListener('hardwareBackPress',()=>{
+            return true;
+        })
+    })
 
     return (
         <Container>
@@ -74,12 +116,15 @@ export function Home(){
             <Header>
                 <HeaderContent>
                     <Logo width={RFValue(108)} height={RFValue(12)}/>
-                    <TotalCars>
-                        Total de 12 carros
-                    </TotalCars>
+                    {
+                        !loading &&
+                        <TotalCars>
+                            Total de {cars.length} carros
+                        </TotalCars>
+                    }
                 </HeaderContent>
             </Header>
-            { loading ? <Load /> :
+            { loading ? <LoadAnimated /> :
             <CarList
                 data={cars}
                 keyExtractor={item => item.id}
@@ -87,13 +132,39 @@ export function Home(){
             />
             }
 
-            <MyCarButton onPress={handleMyCars}>
-              <Ionicons
-                name='ios-car-sport'
-                size={32}
-                color={theme.colors.main_light}
-              />
-            </MyCarButton>
+            <PanGestureHandler onGestureEvent={onGestureEvent}> 
+                <Animated.View
+                    style={[
+                        myCarsButtonStyle,
+                        {
+                            position: 'absolute',
+                            bottom: 13,
+                            right: 22
+                        }
+                    ]}
+                >
+                    <ButtonAnimated 
+                        onPress={handleMyCars}
+                        style={[styles.button, { backgroundColor: theme.colors.main}]}    
+                    >
+                        <Ionicons
+                            name='ios-car-sport'
+                            size={32}
+                            color={theme.colors.main_light}
+                        />
+                    </ButtonAnimated>
+                </Animated.View>
+            </PanGestureHandler>
         </Container>
-    );
+    );  
 }
+
+const styles = StyleSheet.create({
+    button:{
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
+});

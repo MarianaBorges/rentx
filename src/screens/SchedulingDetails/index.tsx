@@ -56,6 +56,7 @@ type SchedulingDetailsScreenNavigationProp = StackNavigationProp<
 
 interface Params {
     car: CarDTO;
+    dates: string[];
   }
   interface RentalPeriod{
     start: string;
@@ -63,6 +64,7 @@ interface Params {
   }
 
 export function SchedulingDetails(){
+  const [loading, setLoading] = useState(false);
   const [rentalPeriod, setRentalPeriod ] = useState<RentalPeriod>({} as RentalPeriod);
 
   const theme = useTheme();
@@ -74,19 +76,31 @@ export function SchedulingDetails(){
   const total =  Number(car.rent.price * dates.length);
 
   async function handleSchedulingConfirm(){
+    setLoading(true);
     const schedulingByCar = await api.get(`/schedules_bycars/${car.id}`);
     console.log(schedulingByCar.data.unvailable_dates);
 
     const unvailable_dates = [
-      ...schedulingByCar.data.unvailable_dates,
+      ...schedulingByCar.data.unavailable_dates,
       ...dates,
     ];
+
+    await api.post('schedules_byuser',{
+      user_id: 1,
+      car,
+      startDate: format(getPlatformDate(new Date(dates[0])),'dd/MM/yyyy'),
+      endDate: format(getPlatformDate(new Date(dates[dates.length - 1])),'dd/MM/yyyy'),
+    });
+
     api.put(`/schedules_bycars/${car.id}`, {
       id: car.id,
       unvailable_dates
     })
     .then(response =>navigation.navigate('SchedulingConfirm'))
-    .catch(() => Alert.alert('Não foi possível confirmar o agendamento'))
+    .catch(() => {
+      setLoading(false);
+      Alert.alert('Não foi possível confirmar o agendamento');
+    })
   }
 
   function handleGoBack(){
@@ -171,6 +185,8 @@ useEffect(()=>{
           title="Alugar agora"
           color={theme.colors.success}
           onPress={handleSchedulingConfirm}
+          enabled={!loading}
+          loading={loading}
           />
       </Footer>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from 'styled-components/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Alert } from 'react-native';
+import { StatusBar } from 'react-native';
 
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
@@ -26,7 +26,7 @@ import {
     Footer,
     Content
 } from './styles';
-import { StatusBar } from 'react-native';
+
 import { format } from 'date-fns';
 import { getPlatformDate } from '../../utils/getPlatformDate';
 import { CarDTO } from '../../dtos/CarDTO';
@@ -62,15 +62,10 @@ export function Scheduling(){
   
     
     function handleSchedulingDetails(){
-
-        if (!rentalPeriod.startFormatted || !rentalPeriod.endFormatted){
-            Alert.alert('Selecione o intervalo para alugar.')
-        }else {
-            navigation.navigate('SchedulingDetails',{
-                car,
-                dates: Object.keys(markedDates)
-            });
-        }
+        navigation.navigate('SchedulingDetails',{
+            car,
+            dates: Object.keys(markedDates)
+        });
     }
 
     function handleGoBack(){
@@ -142,7 +137,11 @@ export function Scheduling(){
                 />
             </Content>
             <Footer>
-                <Button title="Confirmar" onPress={handleSchedulingDetails} />
+                <Button 
+                    title="Confirmar" 
+                    onPress={handleSchedulingDetails} 
+                    enabled={!!rentalPeriod.startFormatted}
+                />
             </Footer>
         </Container>
     );
