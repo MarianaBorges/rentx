@@ -14,15 +14,18 @@ import {
     CarImage,
 } from './styles';
 
-import { CarDTO } from '../../dtos/CarDTO';
+import { Car as ModelCars } from '../../database/model/Car';
+
 import { getAccessoryIcon } from '../../utils/getAccessoryIcon';
+import { useNetInfo } from '@react-native-community/netinfo';
 
 interface Props extends RectButtonProps{
-    data: CarDTO;
+    data: ModelCars;
 }
 
 export function Car({data, ...rest}: Props){
 
+    const netInfo = useNetInfo();
     const IconSvg = getAccessoryIcon(data.fuel_type);
 
  return (
@@ -33,8 +36,8 @@ export function Car({data, ...rest}: Props){
 
           <About>
               <Rent>
-                  <Period>{data.rent.period}</Period>
-                  <Price>{`R$ ${data.rent.price}`}</Price>
+                  <Period>{data.period}</Period>
+                  <Price>{`R$ ${netInfo.isConnected === true ? data.price : '...'}`}</Price>
               </Rent>
               <Type>
                   <IconSvg/>
@@ -42,7 +45,7 @@ export function Car({data, ...rest}: Props){
           </About>
       </Details>
 
-      <CarImage source={{ uri: data.photos[0] }}/>
+      <CarImage source={{ uri: data.thumbnail }} resizeMode="contain"/>
   </Container>
  );
 }

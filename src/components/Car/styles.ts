@@ -2,6 +2,7 @@ import { FlatList } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import { RFValue } from 'react-native-responsive-fontsize';
 import styled from 'styled-components/native';
+import FastImage from 'react-native-fast-image';
 
 export const Container = styled(RectButton)`
  width: 100%;
@@ -53,7 +54,8 @@ export const Price = styled.Text`
 `;
 export const Type = styled.View``;
 
-export const CarImage = styled.Image`
+export const CarImage = styled(FastImage)`
     width: 187px;
     height: 86px;
 `;
+ 

@@ -1,18 +1,13 @@
 import React,{ useEffect, useState } from 'react';
 import { StatusBar, StyleSheet, BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from 'styled-components/native';
-import { RectButton, PanGestureHandler } from 'react-native-gesture-handler';
-import Animated,{
-    useSharedValue, 
-    useAnimatedStyle,
-    useAnimatedGestureHandler,
-    withSpring
-} from 'react-native-reanimated';
+import { synchronize } from '@nozbe/watermelondb/sync';
+import { database } from '../../database';
+import { Car as ModelCars } from '../../database/model/Car';
 
-const ButtonAnimated = Animated.createAnimatedComponent(RectButton);
+//const ButtonAnimated = Animated.createAnimatedComponent(RectButton);
 
 import { RFValue } from 'react-native-responsive-fontsize';
 
@@ -24,7 +19,6 @@ import {
     HeaderContent,
     TotalCars,
     CarList,
-    MyCarButton
 } from './styles';
 
 import { Car } from '../../components/Car';
@@ -32,7 +26,6 @@ import { LoadAnimated } from '../../components/LoadAnimated';
 import api from '../../services/api';
 
 import { CarDTO } from '../../dtos/CarDTO';
-
 
 type RootStackParamList = {
     Home: undefined;
@@ -47,10 +40,11 @@ type HomeScreenNavigationProp = StackNavigationProp<
 export function Home(){
 
     const navigation = useNavigation<HomeScreenNavigationProp>();
-    const [cars, setCars] = useState<CarDTO[]>([]);
+    const [cars, setCars] = useState<ModelCars[]>([]);
     const [loading, setLoading] = useState(true);
+    const netInfo = useNetInfo();
 
-    const positionY = useSharedValue(0);
+    /*const positionY = useSharedValue(0);
     const positionX = useSharedValue(0);
 
     const myCarsButtonStyle = useAnimatedStyle(() => {
@@ -60,9 +54,9 @@ export function Home(){
                 { translateY: positionY.value}
             ]
         }
-      });
+      });*/
 
-    const onGestureEvent = useAnimatedGestureHandler({
+    /*const onGestureEvent = useAnimatedGestureHandler({
         onStart(_, ctx: any){
             ctx.positionX = positionX.value;
             ctx.positionY = positionY.value;
@@ -75,36 +69,65 @@ export function Home(){
             positionX.value = withSpring(0);
             positionY.value = withSpring(0);
         }
-    });
+    });*/
 
-    const theme = useTheme();
+    //const theme = useTheme();
 
     function handleCardDetailsCar(car: CarDTO){
         navigation.navigate('CarDetails', { car });
     }
 
-    function handleMyCars(){
+    /*function handleMyCars(){
         navigation.navigate('MyCars');
+    }*/
+
+    async function offlineSynchronize(){
+        await synchronize({
+            database,
+            pullChanges: async ({ lastPulledAt }) =>{
+                const response = await api
+                .get(`cars/sync/pull?lastPulledVersion=${lastPulledAt || 0}`);
+                console.log(response.data.changes);
+                const { changes, latestVersion } = response.data;
+                return { changes, timestamp: latestVersion }
+            },
+            pushChanges: async ({ changes })=>{
+                const user = changes.users;
+                console.log('pushChanges', changes)
+                await api.post('/users/sync',user).catch(console.log);
+            }
+        })
     }
+
     useEffect(()=>{
+        let isMounted = true;
         async function fetchCars(){
             try{
-                const response = await api.get('/cars');
-                setCars(response.data);
+                const carCollection = database.get<ModelCars>('cars');
+                const cars = await carCollection.query().fetch();
+                if (isMounted){
+                    setCars(cars);
+                }
             }catch(error){
                 console.error(error);
             }finally{
-                setLoading(false);
+                if (isMounted){
+                    setLoading(false);
+                }
             }
         }
         fetchCars();
+        return () =>{
+            isMounted = false;
+        }
     },[]);
 
     useEffect(()=>{
-        BackHandler.addEventListener('hardwareBackPress',()=>{
-            return true;
-        })
-    })
+        if (netInfo.isConnected === true){
+            console.log('dentro do useEffect');
+            offlineSynchronize();
+        }
+    },[netInfo.isConnected])
 
     return (
         <Container>
@@ -132,7 +155,7 @@ export function Home(){
             />
             }
 
-            <PanGestureHandler onGestureEvent={onGestureEvent}> 
+            {/*<PanGestureHandler onGestureEvent={onGestureEvent}> 
                 <Animated.View
                     style={[
                         myCarsButtonStyle,
@@ -154,12 +177,12 @@ export function Home(){
                         />
                     </ButtonAnimated>
                 </Animated.View>
-            </PanGestureHandler>
+                </PanGestureHandler>*/}
         </Container>
     );  
 }
 
-const styles = StyleSheet.create({
+/*const styles = StyleSheet.create({
     button:{
         width: 60,
         height: 60,
@@ -167,4 +190,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     }
-});
+});*/

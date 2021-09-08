@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { StatusBar,useWindowDimensions } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -25,13 +25,20 @@ type RootStackParamList = {
    'SchedulingDetails'
   >;
   
+interface Params{
+    title: string;
+    message: string;
+    nextScreenRoute: string;
+}
 
-export function SchedulingConfirm(){
+export function Confirmation(){
     const {width} = useWindowDimensions();
     const {navigate} = useNavigation<SchedulingConfirmScreenNavigationProp>();
+    const route = useRoute();
+    const { title, message, nextScreenRoute } = route.params as Params;
 
     function handleHome(){
-      navigate('Home');
+      navigate(nextScreenRoute);
     }
   
     return (
@@ -44,12 +51,10 @@ export function SchedulingConfirm(){
             <LogoSvg width={width}/>
             <Content>
                 <DoneSvg width={80} height={80}/>
-                <Title>Carro Alugado!</Title>
+                <Title>{title}</Title>
 
                 <Message>
-                    Agora você só precisa ir{'\n'}
-                    até a concessionária da RENTX{'\n'}
-                    pegar o seu automóvel.
+                   {message}
                 </Message>
             </Content>
             <Footer>
